@@ -173,12 +173,14 @@ var oauth = {
         refreshToken: json.refresh_token
       };
       oauth.info(json.openid, json.access_token, function (error, info) {
-        console.log(error, info);
         if (error) {
           res.redirect(oauth.urls.init);
           return;
         }
-        cb();
+        var ip = req.headers['x-forwarded-for'] ||
+          req.connection.remoteAddress || req.ip;
+        info.ip = ip;
+        cb(info);
       });
     });
   }

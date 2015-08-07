@@ -20,7 +20,7 @@ describe('node-weixin-oauth node module', function () {
       c: 123,
       '中国': 'nodd'
     };
-    var url = nodeWeixinOauth.buildUrl(params);;
+    var url = nodeWeixinOauth.buildUrl(params);
     var result = 'https://open.weixin.qq.com/connect/oauth2/authorize?a=a&b=b&c=123&%E4%B8%AD%E5%9B%BD=nodd#wechat_redirect';
     assert.equal(true, url === result);
 
