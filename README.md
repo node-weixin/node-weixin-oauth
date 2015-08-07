@@ -15,7 +15,21 @@ $ npm install --save node-weixin-oauth
 ```js
 var nodeWeixinOauth = require('node-weixin-oauth');
 
-nodeWeixinOauth('Rainbow');
+var app = {
+  id: 'id',
+  secret: 'secret',
+  token: 'c9be82f386afdb214b0285e96cb9cb82'
+};
+var urls = {
+  redirect: 'http://oauth.domain.com/weixin/back'
+};
+nodeWeixinOauth.initApp(app);
+nodeWeixinOauth.initUrl(urls);
+
+
+nodeWeixinOauth.profile(req, res, function(info) {
+  console.log(info);
+});
 ```
 
 

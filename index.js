@@ -149,9 +149,11 @@ var oauth = {
         res.notFound();
       } else {
         if (json.openid) {
-          req.session.wxopenid = json.openid;
-          req.session.accessToken = json.access_token;
-          req.session.refreshToken = json.refresh_token;
+          req.session.weixin = {
+            openId: json.openid,
+            accessToken: json.access_token,
+            refreshToken: json.refresh_token
+          };
           if (cb) {
             cb(json);
           }
@@ -167,11 +169,6 @@ var oauth = {
 
   profile: function(req, res, cb) {
     this.success(req, res, function (json) {
-      req.session.weixin = {
-        openId: json.openid,
-        accessToken: json.access_token,
-        refreshToken: json.refresh_token
-      };
       oauth.info(json.openid, json.access_token, function (error, info) {
         if (error) {
           res.redirect(oauth.urls.init);
