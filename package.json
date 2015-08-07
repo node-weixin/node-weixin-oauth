@@ -1,6 +1,6 @@
 {
   "name": "node-weixin-oauth",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Weixin Oauth module for node",
   "author": {
     "name": "JSSDKCN",
@@ -18,7 +18,8 @@
     "Oauth"
   ],
   "dependencies": {
-    "node-weixin-request": "0.0.1"
+    "node-weixin-request": "0.0.2",
+    "node-weixin-util": "0.0.1"
   },
   "devDependencies": {
     "grunt-cli": "^0.1.13",

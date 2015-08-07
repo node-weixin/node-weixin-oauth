@@ -1,6 +1,7 @@
 'use strict';
 var assert = require('assert');
 var restful = require('node-weixin-request');
+var util = require('node-weixin-util');
 
 var oauth = {
   app: {
@@ -35,7 +36,7 @@ var oauth = {
    */
   buildUrl: function(params) {
     var oauthUrl = 'https://open.weixin.qq.com/connect/oauth2/authorize';
-    return oauthUrl + '?' + restful.toParam(params) + '#wechat_redirect';
+    return oauthUrl + '?' + util.toParam(params) + '#wechat_redirect';
   },
 
   /**
@@ -68,7 +69,7 @@ var oauth = {
       grant_type: 'refresh_token',
       refresh_token: refreshToken
     };
-    var url = oauthUrl + '?' + restful.toParam(params, true);
+    var url = oauthUrl + '?' + util.toParam(params, true);
     restful.request(url, null, cb);
   },
 
@@ -86,7 +87,7 @@ var oauth = {
       openid: openId,
       lang: 'zh_CN'
     };
-    var url = oauthUrl + '?' + restful.toParam(params, true);
+    var url = oauthUrl + '?' + util.toParam(params, true);
     restful.request(url, null, cb);
   },
   validate: function(openid, accessToken, cb) {
@@ -95,7 +96,7 @@ var oauth = {
       access_token: accessToken,
       openid: openid
     };
-    var url = oauthUrl + '?' + restful.toParam(params, true);
+    var url = oauthUrl + '?' + util.toParam(params, true);
     restful.request(url, null, function(error, json) {
       if (!json.errcode) {
         cb(true);
@@ -108,7 +109,7 @@ var oauth = {
   tokenize: function(accessToken, params, cb) {
     var oauthUrl = 'https://api.weixin.qq.com/sns/oauth2/access_token';
     params['access_token'] = accessToken;
-    var url = oauthUrl + '?' + restful.toParam(params) + '#wechat_redirect';
+    var url = oauthUrl + '?' + util.toParam(params) + '#wechat_redirect';
     restful.request(url, null, cb);
   },
   authorize: function(code, state, cb) {
