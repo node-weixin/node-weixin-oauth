@@ -13,6 +13,19 @@ nodeWeixinOauth.initApp(app);
 nodeWeixinOauth.initUrl(urls);
 
 describe('node-weixin-oauth node module', function () {
+  it('should be able to build oauth url', function() {
+    var params = {
+      a: 'a',
+      b:'b',
+      c: 123,
+      '中国': 'nodd'
+    };
+    var url = nodeWeixinOauth.buildUrl(params);;
+    var result = 'https://open.weixin.qq.com/connect/oauth2/authorize?a=a&b=b&c=123&%E4%B8%AD%E5%9B%BD=nodd#wechat_redirect';
+    assert.equal(true, url === result);
+
+  });
+
   it('should create oauth url ', function () {
     var url = nodeWeixinOauth.createURL('init', 1, 1);
     var genUrl =

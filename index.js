@@ -16,6 +16,7 @@ var oauth = {
     //成功获取用户openid后的地址
     success: ''
   },
+
   /**
    *
    * @param app
@@ -28,7 +29,17 @@ var oauth = {
     oauth.urls = urls;
   },
   /**
-   *  Create a url for weixin oauth
+   * Build parameters into oauth2 url
+   * @param params
+   * @returns {string}
+   */
+  buildUrl: function(params) {
+    var oauthUrl = 'https://open.weixin.qq.com/connect/oauth2/authorize';
+    return oauthUrl + '?' + restful.toParam(params) + '#wechat_redirect';
+  },
+
+  /**
+   *  Create a url for weixin oauth give state, scope and type
    *
    * @param state     User defined state to check use validation
    * @param scope     The scope of user info which app want to have
@@ -49,6 +60,7 @@ var oauth = {
     };
     return this.buildUrl(params);
   },
+
   refresh: function(refreshToken, cb) {
     var oauthUrl = 'https://api.weixin.qq.com/sns/oauth2/refresh_token';
     var params = {
@@ -59,11 +71,19 @@ var oauth = {
     var url = oauthUrl + '?' + restful.toParam(params, true);
     restful.request(url, null, cb);
   },
-  info: function(openid, accessToken, cb) {
+
+  /**
+   * Get user info
+   *
+   * @param openId
+   * @param accessToken
+   * @param cb
+   */
+  info: function(openId, accessToken, cb) {
     var oauthUrl = 'https://api.weixin.qq.com/sns/userinfo';
     var params = {
       access_token: accessToken,
-      openid: openid,
+      openid: openId,
       lang: 'zh_CN'
     };
     var url = oauthUrl + '?' + restful.toParam(params, true);
@@ -84,10 +104,7 @@ var oauth = {
       }
     });
   },
-  buildUrl: function(params) {
-    var oauthUrl = 'https://open.weixin.qq.com/connect/oauth2/authorize';
-    return oauthUrl + '?' + restful.toParam(params) + '#wechat_redirect';
-  },
+
   tokenize: function(accessToken, params, cb) {
     var oauthUrl = 'https://api.weixin.qq.com/sns/oauth2/access_token';
     params['access_token'] = accessToken;
@@ -109,7 +126,63 @@ var oauth = {
       }
 
     });
+  },
+
+  /**
+   * Callback when oauth from weixin is successful.
+   *
+   * @param req       HTTP Request
+   * @param res       HTTP Response
+   * @param cb        Callback when the openid is retrieved from the server
+   * @param redirect  redirect if it is true
+   */
+  success: function(req, res, cb, redirect) {
+    var code = req.param('code');
+    var state = req.param('state');
+    if (!code) {
+      res.redirect(this.urls.init);
+      return;
+    }
+
+    this.authorize(code, state, function (error, json) {
+      if (error) {
+        res.notFound();
+      } else {
+        if (json.openid) {
+          req.session.wxopenid = json.openid;
+          req.session.accessToken = json.access_token;
+          req.session.refreshToken = json.refresh_token;
+          if (cb) {
+            cb(json);
+          }
+          if (redirect) {
+            res.redirect(this.urls.success);
+          }
+          return;
+        }
+        res.redirect(this.urls.init);
+      }
+    });
+  },
+
+  profile: function(req, res, cb) {
+    this.success(req, res, function (json) {
+      req.session.weixin = {
+        openId: json.openid,
+        accessToken: json.access_token,
+        refreshToken: json.refresh_token
+      };
+      oauth.info(json.openid, json.access_token, function (error, info) {
+        console.log(error, info);
+        if (error) {
+          res.redirect(oauth.urls.init);
+          return;
+        }
+        cb();
+      });
+    });
   }
+
 };
 
 module.exports = oauth;
