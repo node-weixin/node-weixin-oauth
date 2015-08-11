@@ -11,7 +11,7 @@ var oauth = {
   },
   urls: {
     //用户首次访问的URL地址
-    init: '',
+    access: '',
     //用户通过验证后的返回地址
     redirect: '',
     //成功获取用户openid后的地址
@@ -23,10 +23,10 @@ var oauth = {
    * @param app
    * @param urls
    */
-  initApp: function(app) {
+  initApp: function (app) {
     oauth.app = app;
   },
-  initUrl: function(urls) {
+  initUrl: function (urls) {
     oauth.urls = urls;
   },
   /**
@@ -34,7 +34,7 @@ var oauth = {
    * @param params
    * @returns {string}
    */
-  buildUrl: function(params) {
+  buildUrl: function (params) {
     var oauthUrl = 'https://open.weixin.qq.com/connect/oauth2/authorize';
     return oauthUrl + '?' + util.toParam(params) + '#wechat_redirect';
   },
@@ -62,14 +62,14 @@ var oauth = {
     return this.buildUrl(params);
   },
 
-  refresh: function(refreshToken, cb) {
+  refresh: function (refreshToken, cb) {
     var oauthUrl = 'https://api.weixin.qq.com/sns/oauth2/refresh_token';
     var params = {
       appId: this.app.id,
       grant_type: 'refresh_token',
       refresh_token: refreshToken
     };
-    var url = oauthUrl + '?' + util.toParam(params, true);
+    var url = oauthUrl + '?' + util.toParam(params);
     restful.request(url, null, cb);
   },
 
@@ -80,24 +80,24 @@ var oauth = {
    * @param accessToken
    * @param cb
    */
-  info: function(openId, accessToken, cb) {
+  info: function (openId, accessToken, cb) {
     var oauthUrl = 'https://api.weixin.qq.com/sns/userinfo';
     var params = {
       access_token: accessToken,
       openid: openId,
       lang: 'zh_CN'
     };
-    var url = oauthUrl + '?' + util.toParam(params, true);
+    var url = oauthUrl + '?' + util.toParam(params);
     restful.request(url, null, cb);
   },
-  validate: function(openid, accessToken, cb) {
+  validate: function (openid, accessToken, cb) {
     var oauthUrl = 'https://api.weixin.qq.com/sns/auth';
     var params = {
       access_token: accessToken,
       openid: openid
     };
     var url = oauthUrl + '?' + util.toParam(params, true);
-    restful.request(url, null, function(error, json) {
+    restful.request(url, null, function (error, json) {
       if (!json.errcode) {
         cb(true);
       } else {
@@ -106,20 +106,20 @@ var oauth = {
     });
   },
 
-  tokenize: function(accessToken, params, cb) {
+  tokenize: function (accessToken, params, cb) {
     var oauthUrl = 'https://api.weixin.qq.com/sns/oauth2/access_token';
     params['access_token'] = accessToken;
     var url = oauthUrl + '?' + util.toParam(params) + '#wechat_redirect';
     restful.request(url, null, cb);
   },
-  authorize: function(code, state, cb) {
+  authorize: function (code, state, cb) {
     var params = {
       appid: this.app.id,
       secret: this.app.secret,
       grant_type: 'authorization_code',
       code: code
     };
-    this.tokenize(params, function(error, json) {
+    this.tokenize(params, function (error, json) {
       if (error) {
         cb(true);
       } else {
@@ -137,11 +137,11 @@ var oauth = {
    * @param cb        Callback when the openid is retrieved from the server
    * @param redirect  redirect if it is true
    */
-  success: function(req, res, cb, redirect) {
+  success: function (req, res, cb, redirect) {
     var code = req.param('code');
     var state = req.param('state');
     if (!code) {
-      res.redirect(this.urls.init);
+      res.redirect(this.urls.access);
       return;
     }
 
@@ -163,16 +163,16 @@ var oauth = {
           }
           return;
         }
-        res.redirect(this.urls.init);
+        res.redirect(this.urls.access);
       }
     });
   },
 
-  profile: function(req, res, cb) {
+  profile: function (req, res, cb) {
     this.success(req, res, function (json) {
       oauth.info(json.openid, json.access_token, function (error, info) {
         if (error) {
-          res.redirect(oauth.urls.init);
+          res.redirect(oauth.urls.access);
           return;
         }
         var ip = req.headers['x-forwarded-for'] ||
