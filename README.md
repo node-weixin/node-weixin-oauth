@@ -13,23 +13,21 @@ $ npm install --save node-weixin-oauth
 ## Usage
 
 ```js
-var nodeWeixinOauth = require('node-weixin-oauth');
+var nwo = require('node-weixin-oauth');
 
-var app = {
-  id: 'id',
-  secret: 'secret',
-  token: 'c9be82f386afdb214b0285e96cb9cb82'
-};
-var urls = {
-  redirect: 'http://oauth.domain.com/weixin/back'
-};
-nodeWeixinOauth.initApp(app);
-nodeWeixinOauth.initUrl(urls);
+//第一步：创建用户通过微信可访问的URL
+nwo.createURL()
+//第二步：在重定向函数里处理调用信息
+nwo.onAuthorized()
+//第三步：刷新access token(可选)
+nwo.refresh()
+//第四步：获取用户信息(scope为 snsapi_userinfo时有效)
+nwo.profile()
+//第五步：检验token有效性(可选)
+nwo.validate()
 
 
-nodeWeixinOauth.profile(req, res, function(info) {
-  console.log(info);
-});
+
 ```
 
 

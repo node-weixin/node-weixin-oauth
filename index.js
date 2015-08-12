@@ -4,31 +4,8 @@ var restful = require('node-weixin-request');
 var util = require('node-weixin-util');
 
 var oauth = {
-  app: {
-    id: null,
-    secret: null,
-    token: null
-  },
-  urls: {
-    //用户首次访问的URL地址
-    access: '',
-    //用户通过验证后的返回地址
-    redirect: '',
-    //成功获取用户openid后的地址
-    success: ''
-  },
+  session: {},
 
-  /**
-   *
-   * @param app
-   * @param urls
-   */
-  initApp: function (app) {
-    oauth.app = app;
-  },
-  initUrl: function (urls) {
-    oauth.urls = urls;
-  },
   /**
    * Build parameters into oauth2 url
    * @param params
@@ -40,20 +17,20 @@ var oauth = {
   },
 
   /**
-   *  Create a url for weixin oauth give state, scope and type
+   *  Step 1: Create a url for weixin oauth give state, scope and type
    *
    * @param state     User defined state to check use validation
    * @param scope     The scope of user info which app want to have
    * @param type      Response type of weixin api, currently on 'code' is supported
    * @returns {*}
    */
-  createURL: function (state, scope, type) {
+  createURL: function (appId, redirectUri, state, scope, type) {
     assert((scope >= 0) && (scope <= 1));
     assert(state !== null);
     type = 0;
     var params = {
-      appid: this.app.id,
-      redirect_uri: this.urls.redirect,
+      appid: appId,
+      redirect_uri: redirectUri,
       //Only on type currently
       response_type: ['code'][type],
       scope: ['snsapi_base', 'snsapi_userinfo'][scope],
@@ -62,10 +39,17 @@ var oauth = {
     return this.buildUrl(params);
   },
 
-  refresh: function (refreshToken, cb) {
+  /**
+   * Refresh authorization info when the access token expires
+   * @param appId
+   * @param refreshToken
+   * @param cb
+   */
+
+  refresh: function (appId, refreshToken, cb) {
     var oauthUrl = 'https://api.weixin.qq.com/sns/oauth2/refresh_token';
     var params = {
-      appId: this.app.id,
+      appId: appId,
       grant_type: 'refresh_token',
       refresh_token: refreshToken
     };
@@ -74,13 +58,13 @@ var oauth = {
   },
 
   /**
-   * Get user info
+   * Get user profile
    *
    * @param openId
    * @param accessToken
    * @param cb
    */
-  info: function (openId, accessToken, cb) {
+  profile: function (openId, accessToken, cb) {
     var oauthUrl = 'https://api.weixin.qq.com/sns/userinfo';
     var params = {
       access_token: accessToken,
@@ -90,6 +74,13 @@ var oauth = {
     var url = oauthUrl + '?' + util.toParam(params);
     restful.request(url, null, cb);
   },
+
+  /**
+   * Validate if the accessToken is still valid
+   * @param openid
+   * @param accessToken
+   * @param cb
+   */
   validate: function (openid, accessToken, cb) {
     var oauthUrl = 'https://api.weixin.qq.com/sns/auth';
     var params = {
@@ -106,26 +97,40 @@ var oauth = {
     });
   },
 
+  /**
+   * Get access token from server
+   *
+   * @param accessToken
+   * @param params
+   * @param cb
+   */
   tokenize: function (accessToken, params, cb) {
     var oauthUrl = 'https://api.weixin.qq.com/sns/oauth2/access_token';
     params['access_token'] = accessToken;
     var url = oauthUrl + '?' + util.toParam(params) + '#wechat_redirect';
     restful.request(url, null, cb);
   },
-  authorize: function (code, state, cb) {
+
+  /**
+   * Get access token after code retrieved
+   * @param app
+   * @param code
+   * @param state
+   * @param cb
+   */
+  onAuthorized: function (app, accessToken, code, cb) {
     var params = {
-      appid: this.app.id,
-      secret: this.app.secret,
+      appid: app.id,
+      secret: app.secret,
       grant_type: 'authorization_code',
       code: code
     };
-    this.tokenize(params, function (error, json) {
+    this.tokenize(accessToken, params, function (error, json) {
       if (error) {
-        cb(true);
+        cb(true, error);
       } else {
         cb(false, json);
       }
-
     });
   },
 
@@ -137,52 +142,27 @@ var oauth = {
    * @param cb        Callback when the openid is retrieved from the server
    * @param redirect  redirect if it is true
    */
-  success: function (req, res, cb, redirect) {
-    var code = req.param('code');
-    var state = req.param('state');
-    if (!code) {
-      res.redirect(this.urls.access);
-      return;
-    }
-
-    this.authorize(code, state, function (error, json) {
+  success: function (app, code, state, cb) {
+    this.authorize(app, code, state, function (error, json) {
       if (error) {
-        res.notFound();
-      } else {
-        if (json.openid) {
-          req.session.weixin = {
-            openId: json.openid,
-            accessToken: json.access_token,
-            refreshToken: json.refresh_token
-          };
-          if (cb) {
-            cb(json);
-          }
-          if (redirect) {
-            res.redirect(this.urls.success);
-          }
-          return;
-        }
-        res.redirect(this.urls.access);
+        cb(true, json);
+        return;
       }
-    });
-  },
 
-  profile: function (req, res, cb) {
-    this.success(req, res, function (json) {
-      oauth.info(json.openid, json.access_token, function (error, info) {
-        if (error) {
-          res.redirect(oauth.urls.access);
-          return;
+      if (json.openid) {
+        oauth.session = {
+          openId: json.openid,
+          accessToken: json.access_token,
+          refreshToken: json.refresh_token
+        };
+        if (cb) {
+          cb(false, json);
         }
-        var ip = req.headers['x-forwarded-for'] ||
-          req.connection.remoteAddress || req.ip;
-        info.ip = ip;
-        cb(info);
-      });
+        return;
+      }
+      cb(true, json);
     });
   }
-
 };
 
 module.exports = oauth;
