@@ -2,7 +2,6 @@
 var assert = require('assert');
 
 var nwc = require('node-weixin-config');
-var util = require('node-weixin-util');
 
 var nodeWeixinOauth = require('../');
 var app = {
@@ -150,7 +149,7 @@ describe('node-weixin-oauth node module', function () {
       .reply(200, {
         errcode: 1
       });
-    nodeWeixinOauth.validate(openId, accessToken, function (error, body) {
+    nodeWeixinOauth.validate(openId, accessToken, function (error) {
       assert.equal(true, !error);
       done();
     });
@@ -173,7 +172,7 @@ describe('node-weixin-oauth node module', function () {
       .reply(200, {
         errcode: 0
       });
-    nodeWeixinOauth.validate(openId, accessToken, function (error, body) {
+    nodeWeixinOauth.validate(openId, accessToken, function (error) {
       assert.equal(true, error);
       done();
     });
