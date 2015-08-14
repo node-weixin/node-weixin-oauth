@@ -115,7 +115,6 @@ var oauth = {
    * Get access token after code retrieved
    * @param app
    * @param code
-   * @param state
    * @param cb
    */
   authorize: function (app, code, cb) {
@@ -137,13 +136,12 @@ var oauth = {
   /**
    * Callback when oauth from weixin is successful.
    *
-   * @param req       HTTP Request
-   * @param res       HTTP Response
-   * @param cb        Callback when the openid is retrieved from the server
-   * @param redirect  redirect if it is true
+   * @param app
+   * @param code
+   * @param cb
    */
-  success: function (app, code, state, cb) {
-    this.authorize(app, code, state, function (error, json) {
+  success: function (app, code, cb) {
+    this.authorize(app, code, function (error, json) {
       if (error) {
         cb(true, json);
         return;
