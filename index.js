@@ -100,13 +100,13 @@ var oauth = {
   /**
    * Get access token from server
    *
-   * @param accessToken
+   * @param appToken
    * @param params
    * @param cb
    */
-  tokenize: function (accessToken, params, cb) {
+  tokenize: function (appToken, params, cb) {
     var oauthUrl = 'https://api.weixin.qq.com/sns/oauth2/access_token';
-    params['access_token'] = accessToken;
+    params['access_token'] = appToken;
     var url = oauthUrl + '?' + util.toParam(params) + '#wechat_redirect';
     restful.request(url, null, cb);
   },
@@ -118,14 +118,14 @@ var oauth = {
    * @param state
    * @param cb
    */
-  onAuthorized: function (app, accessToken, code, cb) {
+  authorize: function (app, code, cb) {
     var params = {
       appid: app.id,
       secret: app.secret,
       grant_type: 'authorization_code',
       code: code
     };
-    this.tokenize(accessToken, params, function (error, json) {
+    this.tokenize(app.token, params, function (error, json) {
       if (error) {
         cb(true, error);
       } else {
@@ -148,7 +148,6 @@ var oauth = {
         cb(true, json);
         return;
       }
-
       if (json.openid) {
         oauth.session = {
           openId: json.openid,

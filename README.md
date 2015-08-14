@@ -18,7 +18,7 @@ var nwo = require('node-weixin-oauth');
 //第一步：创建用户通过微信可访问的URL
 nwo.createURL()
 //第二步：在重定向函数里处理调用信息
-nwo.onAuthorized()
+nwo.authorize()
 //第三步：刷新access token(可选)
 nwo.refresh()
 //第四步：获取用户信息(scope为 snsapi_userinfo时有效)
@@ -26,9 +26,9 @@ nwo.profile()
 //第五步：检验token有效性(可选)
 nwo.validate()
 
-
-
 ```
+
+>实际的调用过程参考node-weixin-express
 
 
 ## License
