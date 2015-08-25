@@ -5,9 +5,9 @@ var nwc = require('node-weixin-config');
 
 var nodeWeixinOauth = require('../');
 var app = {
-  id: 'wx0201661ce8fb3e11',
-  secret: '483585a84eacd76693855485cb88dc8a',
-  token: 'c9be82f386afdb214b0285e96cb9cb82'
+  id: process.env.APP_ID,
+  secret: process.env.APP_SECRET,
+  token: process.env.APP_TOKEN
 };
 var urls = {
   access: 'http://oauth.domain.com/weixin/access',
