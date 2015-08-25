@@ -28,27 +28,27 @@ $ npm install --save node-weixin-oauth
 
 ## 使用
 
-1. 得到oauth对象
+1、得到oauth对象
 
 ```js
 var nwo = require('node-weixin-oauth');
 ```
-2.创建用户通过微信可访问的URL
-  state是随意表示当前程序状态的值
-  userInfo: 0 表示最少的基本信息， 1表示获取更多用户信息
-  创建好URL后，需要将用户引导到创建的地址进行校验
+2、创建用户通过微信可访问的URL
+  - state是随意表示当前程序状态的值
+  - userInfo: 0 表示最少的基本信息， 1表示获取更多用户信息
+  - 创建好URL后，需要将用户引导到创建的地址进行校验
 
 ```js
 var url = nwo.createURL(appId, redirectUri, state, userInfo)
 res.redirect(url);
 ```
 
-3.在重定向函数里处理调用信息
+3、在重定向函数里处理调用信息
  在校验用户成功后，微信会将用户带回到redirectUri指定的地址进行下一步操作
  在redirectUri里需要使用success来对返回的code进行校验，并获取以下三样数据：
-  1、微信服务器的access token
-  2、微信服务器的refresh token
-  3、用户的openid
+  1. 微信服务器的access token
+  2. 微信服务器的refresh token
+  3. 用户的openid
  可以通过nwo.session访问，也可以通过返回的body访问。
  nwo.session里的数据结构如下： {
         oauth.session = {
@@ -69,7 +69,7 @@ nwo.success(app, code, function(error, body) {
 });
 ```
 
-4.获取用户信息(可选)
+4、获取用户信息(可选)
   当scope为1时，我们还可以进一步的获取用户信息
  
  
@@ -77,14 +77,14 @@ nwo.success(app, code, function(error, body) {
 nwo.profile(openId, accessToken, function(error, body) {
 });
 ```
-5.刷新access token(可选)
+5、刷新access token(可选)
 
 ```js
 nwo.refresh(appId, refreshToken, function(error, body) {
 });
 ```
 
-6.检验token有效性(可选)
+6、检验token有效性(可选)
 
 ```js
 nwo.validate(openid, refreshToken, function(error, body) {
