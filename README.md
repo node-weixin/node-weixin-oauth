@@ -50,16 +50,22 @@ res.redirect(url);
   2. 微信服务器的refresh token
   3. 用户的openid
  可以通过nwo.session访问，也可以通过返回的body访问。
- nwo.session里的数据结构如下： {
+ nwo.session里的数据结构如下：
+
+```js
+        {
         oauth.session = {
           openId: json.openid,
           accessToken: json.access_token,
           refreshToken: json.refresh_token
         };
- 调用如下:
- 其中
-    app:是node-weixin-config通过app.init校验的数据
-    code:服务器返回校验数据
+```
+
+      调用如下:
+*   其中
+    - app:是node-weixin-config通过app.init校验的数据
+    - code:服务器返回校验数据
+
 ```js
 nwo.success(app, code, function(error, body) {
   if (!error) {
