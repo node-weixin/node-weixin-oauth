@@ -3,6 +3,10 @@ var assert = require('assert');
 var restful = require('node-weixin-request');
 var util = require('node-weixin-util');
 
+function Oauth() {
+
+};
+
 var oauth = {
   session: {},
 
@@ -141,13 +145,14 @@ var oauth = {
    * @param cb
    */
   success: function (app, code, cb) {
+    var self = this;
     this.authorize(app, code, function (error, json) {
       if (error) {
         cb(true, json);
         return;
       }
       if (json.openid) {
-        oauth.session = {
+        self.session = {
           openId: json.openid,
           accessToken: json.access_token,
           refreshToken: json.refresh_token
@@ -159,8 +164,14 @@ var oauth = {
       }
       cb(true, json);
     });
+  },
+  create: function() {
+    return new Oauth();
   }
 };
 
-module.exports = oauth;
+var _ = require("lodash");
+_.extend(Oauth.prototype, oauth);
+
+module.exports = new Oauth();
 

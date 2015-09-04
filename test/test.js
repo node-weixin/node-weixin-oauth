@@ -3,7 +3,7 @@ var assert = require('assert');
 
 var nwc = require('node-weixin-config');
 
-var nodeWeixinOauth = require('../');
+var nodeWeixinOauth = require('../').create();
 var app = {
   id: process.env.APP_ID,
   secret: process.env.APP_SECRET,
