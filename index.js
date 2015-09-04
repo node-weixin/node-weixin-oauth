@@ -4,8 +4,7 @@ var restful = require('node-weixin-request');
 var util = require('node-weixin-util');
 
 function Oauth() {
-
-};
+}
 
 var oauth = {
   session: {},
