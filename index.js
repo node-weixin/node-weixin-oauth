@@ -3,9 +3,6 @@ var assert = require('assert');
 var restful = require('node-weixin-request');
 var util = require('node-weixin-util');
 
-function Oauth() {
-}
-
 var oauth = {
   session: {},
 
@@ -163,14 +160,8 @@ var oauth = {
       }
       cb(true, json);
     });
-  },
-  create: function() {
-    return new Oauth();
   }
 };
 
-var _ = require("lodash");
-_.extend(Oauth.prototype, oauth);
-
-module.exports = new Oauth();
+module.exports = oauth;
 

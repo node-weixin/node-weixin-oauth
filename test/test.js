@@ -3,7 +3,7 @@ var assert = require('assert');
 
 var nwc = require('node-weixin-config');
 
-var nodeWeixinOauth = require('../').create();
+var nodeWeixinOauth = require('../');
 var app = {
   id: process.env.APP_ID,
   secret: process.env.APP_SECRET,
@@ -59,6 +59,28 @@ describe('node-weixin-oauth node module', function () {
     nodeWeixinOauth.authorize(app, code, function (error, body) {
       assert.equal(true, !error);
       assert.equal(true, !!body);
+      done();
+    });
+  });
+
+  it('should fail to send a tokenize request', function (done) {
+
+    var code = 'sosos';
+    var params = {
+      appid: app.id,
+      secret: app.secret,
+      grant_type: 'authorization_code',
+      code: code
+    };
+    params['access_token'] = app.token;
+    var nock = require('nock');
+    var url = 'https://api.weixin.qq.com';
+    nock(url)
+      .post('/sns/oauth2/access_token')
+      .query(params)
+      .reply(500, params);
+    nodeWeixinOauth.authorize(app, code, function (error) {
+      assert.equal(true, error);
       done();
     });
   });
@@ -176,7 +198,7 @@ describe('node-weixin-oauth node module', function () {
     });
   });
 
-  it('should fail to handler sucess', function (done) {
+  it('should be able to handler success', function (done) {
     var code = 'aaa';
     var nock = require('nock');
     var params = {
@@ -206,4 +228,57 @@ describe('node-weixin-oauth node module', function () {
     });
   });
 
+
+  it('should fail to handler success', function (done) {
+    var code = 'aaa';
+    var nock = require('nock');
+    var params = {
+      appid: app.id,
+      secret: app.secret,
+      grant_type: 'authorization_code',
+      code: code,
+      access_token: app.token
+    };
+    var url = 'https://api.weixin.qq.com';
+    var reply = {
+      openid: 'sofdso',
+      access_token: 'sossoso',
+      refresh_token: 'refresh_token'
+    };
+
+    nock(url)
+      .post('/sns/oauth2/access_token')
+      .query(params)
+      .reply(500, reply);
+    nodeWeixinOauth.success(app, code, function (error) {
+      assert.equal(true, error);
+      done();
+    });
+  });
+
+  it('should fail to handler success', function (done) {
+    var code = 'aaa';
+    var nock = require('nock');
+    var params = {
+      appid: app.id,
+      secret: app.secret,
+      grant_type: 'authorization_code',
+      code: code,
+      access_token: app.token
+    };
+    var url = 'https://api.weixin.qq.com';
+    var reply = {
+      access_token: 'sossoso',
+      refresh_token: 'refresh_token'
+    };
+
+    nock(url)
+      .post('/sns/oauth2/access_token')
+      .query(params)
+      .reply(200, reply);
+    nodeWeixinOauth.success(app, code, function (error) {
+      assert.equal(true, error);
+      done();
+    });
+  });
 });
