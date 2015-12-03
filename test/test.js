@@ -33,9 +33,10 @@ describe('node-weixin-oauth node module', function () {
   });
 
   it('should create oauth url ', function () {
-    var url = nodeWeixinOauth.createURL(nwc.app.id, nwc.urls.oauth.redirect, 'init', 1, 1);
+    var url = nodeWeixinOauth.createURL(app.id, urls.redirect, 'init', 1, 1);
     var genUrl =
-      'https://open.weixin.qq.com/connect/oauth2/authorize?appid=wx0201661ce8fb3e11&redirect_uri=http%3A%2F%2Foauth.domain.com%2Fweixin%2Fback&response_type=code&scope=snsapi_userinfo&state=init#wechat_redirect';
+      'https://open.weixin.qq.com/connect/oauth2/authorize?appid=' +
+      app.id + '&redirect_uri=http%3A%2F%2Foauth.domain.com%2Fweixin%2Fback&response_type=code&scope=snsapi_userinfo&state=init#wechat_redirect';
     assert(genUrl === url);
   });
 
@@ -90,7 +91,7 @@ describe('node-weixin-oauth node module', function () {
     var refreshToken = "hsosos";
     var nock = require('nock');
     var params = {
-      appId: nwc.app.id,
+      appId: app.id,
       grant_type: 'refresh_token',
       refresh_token: refreshToken
     };
@@ -100,7 +101,7 @@ describe('node-weixin-oauth node module', function () {
       .post('/sns/oauth2/refresh_token')
       .query(params)
       .reply(200, params);
-    nodeWeixinOauth.refresh(nwc.app.id, refreshToken, function (error, body) {
+    nodeWeixinOauth.refresh(app.id, refreshToken, function (error, body) {
       assert.equal(true, !error);
       assert.equal(true, !!body);
       done();
@@ -159,7 +160,7 @@ describe('node-weixin-oauth node module', function () {
 
     var params = {
       access_token: accessToken,
-      openid: openId,
+      openid: openId
     };
     var url = 'https://api.weixin.qq.com';
 

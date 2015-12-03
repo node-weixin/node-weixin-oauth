@@ -150,7 +150,7 @@ nwo.validate(openid, refreshToken, function(error, body) {
 
 ## License
 
-MIT © [node-weixin](blog.3gcnbeta.com)
+MIT © [node-weixin](www.node-weixin.com)
 
 
 [npm-image]: https://badge.fury.io/js/node-weixin-oauth.svg

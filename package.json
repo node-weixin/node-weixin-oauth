@@ -1,6 +1,6 @@
 {
   "name": "node-weixin-oauth",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Weixin Oauth module for node",
   "author": {
     "name": "node-weixin",
@@ -18,19 +18,20 @@
     "Oauth"
   ],
   "dependencies": {
-    "node-weixin-config": "0.0.2",
-    "node-weixin-request": "0.0.2",
-    "node-weixin-util": "0.0.1"
+    "node-weixin-config": "0.2.0",
+    "node-weixin-request": "0.3.1",
+    "node-weixin-util": "0.2.0"
   },
   "devDependencies": {
+    "grunt": "^0.4.5",
     "grunt-cli": "^0.1.13",
     "grunt-contrib-jshint": "^0.11.0",
     "grunt-contrib-nodeunit": "^0.4.1",
     "grunt-contrib-watch": "^0.6.1",
     "grunt-mocha-cli": "^1.12.0",
+    "istanbul": "^0.4.0",
     "jshint-stylish": "^1.0.1",
     "load-grunt-tasks": "^3.1.0",
-    "istanbul": "^0.4.0",
     "mocha": "^2.3.3",
     "nock": "^2.10.0",
     "time-grunt": "^1.1.0"
