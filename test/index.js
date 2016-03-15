@@ -1,245 +1,284 @@
 'use strict';
+
+/* eslint camelcase: [2, {properties: "never"}] */
+
 var assert = require('assert');
-var express = require('express');
-var bodyParser = require('body-parser');
-var settings = require('node-weixin-settings');
-var events = require('node-weixin-events');
 
-var request = require('supertest');
+var nwc = require('node-weixin-config');
 
-var nodeWeixinAuth = require('../');
-
-var callbacks = [];
-
+var nodeWeixinOauth = require('../');
 var app = {
   id: process.env.APP_ID,
   secret: process.env.APP_SECRET,
   token: process.env.APP_TOKEN
 };
+var urls = {
+  access: 'http://oauth.domain.com/weixin/access',
+  redirect: 'http://oauth.domain.com/weixin/back',
+  success: 'http://oauth.domain.com/weixin/success'
+};
 
-var server = express();
-server.use(bodyParser.urlencoded({
-  extended: false
-}));
-server.use(bodyParser.json());
-server.post('/weixin', function (req, res) {
-  var data = nodeWeixinAuth.extract(req.body);
+nwc.app.init(app);
+nwc.urls.oauth.init(urls);
 
-  nodeWeixinAuth.ack(app.token, data, function (error, data) {
-    if (!error) {
-      res.send(data);
-      return;
-    }
-    switch (error) {
-      case 1:
-        res.send('INPUT_INVALID');
-        break;
-      case 2:
-        res.send('SIGNATURE_NOT_MATCH');
-        break;
-      default:
-        res.send('UNKNOWN_ERROR');
-        break;
-    }
-  });
-});
-
-server.post('/weixinfail', function (req, res) {
-  nodeWeixinAuth.ack(app.token, {}, function (error, data) {
-    if (!error) {
-      res.send(data);
-      return;
-    }
-    switch (error) {
-      case 1:
-        res.send('INPUT_INVALID');
-        break;
-      case 2:
-        res.send('SIGNATURE_NOT_MATCH');
-        break;
-      default:
-        res.send('UNKNOWN_ERROR');
-        break;
-    }
-  });
-});
-
-server.post('/weixinfail2', function (req, res) {
-  var data = nodeWeixinAuth.extract(req.body);
-
-  nodeWeixinAuth.ack('sdfsfdfds', data, function (error, data) {
-    if (!error) {
-      res.send(data);
-      return;
-    }
-    switch (error) {
-      case 1:
-        res.send('INPUT_INVALID');
-        break;
-      case 2:
-        res.send('SIGNATURE_NOT_MATCH');
-        break;
-      default:
-        res.send('UNKNOWN_ERROR');
-        break;
-    }
-  });
-});
-
-events.on(events.ACCESS_TOKEN_NOTIFY, function (eventApp, eventAuth) {
-  settings.get(app.id, 'auth', function (auth) {
-    assert.deepEqual(eventApp, app);
-    assert.equal(true, eventAuth.accessToken === auth.accessToken);
-    callbacks.push([eventApp, eventAuth]);
-  });
-});
-
-describe('node-weixin-auth node module', function () {
-  it('should generate signature and check it', function () {
-    var timestamp = 1439402998232;
-    var nonce = 'wo1cn2NJPRnZWiTuQW8zQ6Mzn4qQ3kWi';
-    var token = 'sososso';
-    var sign = nodeWeixinAuth.generateSignature(token, timestamp, nonce);
-    assert.equal(true, sign ===
-      '886a1db814d97a26c081a9814a47bf0b9ff1da9c');
+describe('node-weixin-oauth node module', function () {
+  it('should be able to build oauth url', function () {
+    var params = {
+      a: 'a',
+      b: 'b',
+      c: 123,
+      中国: 'nodd'
+    };
+    var url = nodeWeixinOauth.buildUrl(params);
+    var result = 'https://open.weixin.qq.com/connect/oauth2/authorize?a=a&b=b&c=123&%E4%B8%AD%E5%9B%BD=nodd#wechat_redirect';
+    console.log(url);
+    console.log(result);
+    assert.equal(true, url === result);
   });
 
-  it('should check failed', function () {
-    var timestamp = 1439402998232;
-    var nonce = 'wo1cn2NJPRnZWiTuQW8zQ6Mzn4qQ3kWi';
-    var token = 'sososso';
-    var result = nodeWeixinAuth.check(token, 'soso', timestamp, nonce);
-    assert.equal(true, !result);
+  it('should create oauth url ', function () {
+    var url = nodeWeixinOauth.createURL(app.id, urls.redirect, 'init', 1, 1);
+    var genUrl =
+      'https://open.weixin.qq.com/connect/oauth2/authorize?appid=' +
+      app.id + '&redirect_uri=http%3A%2F%2Foauth.domain.com%2Fweixin%2Fback&response_type=code&scope=snsapi_userinfo&state=init#wechat_redirect';
+    assert(genUrl === url);
   });
 
-  it('should be able to get a token', function (done) {
-    nodeWeixinAuth.tokenize(app, function (error, json) {
-      settings.get(app.id, 'auth', function (auth) {
-        assert.equal(true, !error);
-        assert.equal(true, json.access_token.length > 1);
-        assert.equal(true, json.expires_in <= 7200);
-        assert.equal(true, json.expires_in >= 7000);
-        assert.equal(true, json.access_token === auth.accessToken);
-        done();
-      });
-    });
-  });
-  it('should be able to determine to request within expiration', function (done) {
-    nodeWeixinAuth.determine(app, function (passed) {
-      var timeOut = function () {
-        nodeWeixinAuth.determine(app, function (passed) {
-          assert.equal(true, passed);
-          done();
-        });
-      };
-      settings.get(app.id, 'auth', function (auth) {
-        assert.equal(true, auth.lastTime !== null);
-        assert.equal(true, !passed);
-        setTimeout(timeOut, 1000);
-      });
-    });
-  });
-  it('should be able to determine not to request within expiration',
-    function (done) {
-      // Change access token expiration to 7200 for testing purpose
-      nodeWeixinAuth.ACCESS_TOKEN_EXP = 700;
-      setTimeout(function () {
-        nodeWeixinAuth.determine(app, function (passed) {
-          assert.equal(true, !passed);
-          done();
-        });
-      }, 1000);
-    });
-  it('should be able to get a token and checkit', function (done) {
-    nodeWeixinAuth.tokenize(app, function (error, json) {
+  it('should be able to send a tokenize request', function (done) {
+    var code = 'sosos';
+    var params = {
+      appid: app.id,
+      secret: app.secret,
+      grant_type: 'authorization_code',
+      code: code
+    };
+    params.access_token = app.token;
+    var nock = require('nock');
+    var url = 'https://api.weixin.qq.com';
+    // var query = util.toParam(params) + '#wechat_redirect';
+    nock(url)
+      .post('/sns/oauth2/access_token')
+      .query(params)
+      .reply(200, params);
+    nodeWeixinOauth.authorize(app, code, function (error, body) {
       assert.equal(true, !error);
-      assert.equal(true, json.access_token.length > 1);
-      assert.equal(true, json.expires_in <= 7200);
-      assert.equal(true, json.expires_in >= 7000);
-      done();
-    });
-  });
-  it('should be able to auth weixin signature', function (done) {
-    var time = new Date().getTime();
-    var nonce = 'nonce';
-    var signature = nodeWeixinAuth.generateSignature(app.token, time,
-      nonce);
-    var echostr = 'Hello world!';
-    var data = {
-      signature: signature,
-      timestamp: time,
-      nonce: nonce,
-      echostr: echostr
-    };
-    request(server).post('/weixin').send(data).expect(200).expect(
-      echostr).end(done);
-  });
-
-  it('should be failed to auth weixin signature', function (done) {
-    var time = new Date().getTime();
-    var nonce = 'nonce';
-    var signature = nodeWeixinAuth.generateSignature(app.token, time,
-      nonce);
-    var data = {
-      signature: signature,
-      timestamp: time,
-      nonce: nonce
-    };
-    request(server).post('/weixin').send(data).expect(200).end(done);
-  });
-
-  it('should be fail to auth weixin signature', function (done) {
-    var time = new Date().getTime();
-    var nonce = 'nonce';
-    var signature = nodeWeixinAuth.generateSignature(app.token, time,
-      nonce);
-    var echostr = 'Hello world!';
-    var data = {
-      signature: signature,
-      timestamp: time,
-      nonce: nonce,
-      echostr: echostr
-    };
-    request(server).post('/weixinfail').send(data).expect(200).expect(
-      'UNKNOWN_ERROR').end(done);
-  });
-
-  it('should be fail to auth weixin signature 2', function (done) {
-    var time = new Date().getTime();
-    var nonce = 'nonce';
-    var signature = nodeWeixinAuth.generateSignature(app.token, time,
-      nonce);
-    var echostr = 'Hello world!';
-    var data = {
-      signature: signature,
-      timestamp: time,
-      nonce: nonce,
-      echostr: echostr
-    };
-    request(server).post('/weixinfail2').send(data).expect(200).expect(
-      'UNKNOWN_ERROR').end(done);
-  });
-
-  it('should be able to get server ips', function (done) {
-    nodeWeixinAuth.ips(app, function (error, data) {
-      assert.equal(true, !error);
-      assert.equal(true, data.ip_list.length > 1);
+      assert.equal(true, Boolean(body));
       done();
     });
   });
 
-  it('should be able to get notified when access Token updated', function (done) {
-    settings.get(app.id, 'auth', function (auth) {
-      for (var i = 0; i < callbacks.length; i++) {
-        var callback = callbacks[i];
-        var appInfo = callback[0];
-        var authInfo = callback[1];
-        assert.equal(true, appInfo.id === app.id);
-        assert.equal(true, appInfo.token === app.token);
-        assert.equal(true, appInfo.secret === app.secret);
-        assert.equal(true, authInfo.accessToken === auth.accessToken);
-      }
-      assert.equal(true, callbacks.length >= 1);
+  it('should fail to send a tokenize request', function (done) {
+    var code = 'sosos';
+    var params = {
+      appid: app.id,
+      secret: app.secret,
+      grant_type: 'authorization_code',
+      code: code
+    };
+    params.access_token = app.token;
+    var nock = require('nock');
+    var url = 'https://api.weixin.qq.com';
+    nock(url)
+      .post('/sns/oauth2/access_token')
+      .query(params)
+      .reply(500, params);
+    nodeWeixinOauth.authorize(app, code, function (error) {
+      assert.equal(true, error);
+      done();
+    });
+  });
+
+  it('should be able to refresh', function (done) {
+    var refreshToken = 'hsosos';
+    var nock = require('nock');
+    var params = {
+      appId: app.id,
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken
+    };
+    var url = 'https://api.weixin.qq.com';
+
+    nock(url)
+      .post('/sns/oauth2/refresh_token')
+      .query(params)
+      .reply(200, params);
+    nodeWeixinOauth.refresh(app.id, refreshToken, function (error, body) {
+      assert.equal(true, !error);
+      assert.equal(true, Boolean(body));
+      done();
+    });
+  });
+
+  it('should be able to request info', function (done) {
+    var accessToken = 'hsosos';
+    var openId = 'aaaa';
+    var nock = require('nock');
+    var params = {
+      access_token: accessToken,
+      openid: openId,
+      lang: 'zh_CN'
+    };
+    var url = 'https://api.weixin.qq.com';
+
+    nock(url)
+      .post('/sns/userinfo')
+      .query(params)
+      .reply(200, params);
+    nodeWeixinOauth.profile(openId, accessToken, function (error, body) {
+      assert.equal(true, !error);
+      assert.equal(true, Boolean(body));
+      done();
+    });
+  });
+
+  it('should be able to profile a user info', function (done) {
+    var accessToken = 'aa';
+    var openId = 'ssoos';
+    var nock = require('nock');
+
+    var params = {
+      access_token: accessToken,
+      openid: openId,
+      lang: 'zh_CN'
+    };
+    var url = 'https://api.weixin.qq.com';
+
+    nock(url)
+      .post('/sns/userinfo')
+      .query(params)
+      .reply(200, params);
+    nodeWeixinOauth.profile(openId, accessToken, function (error, body) {
+      assert.equal(true, !error);
+      assert.equal(true, Boolean(body));
+      done();
+    });
+  });
+
+  it('should be able to validate a token', function (done) {
+    var accessToken = 'aa';
+    var openId = 'ssoos';
+    var nock = require('nock');
+
+    var params = {
+      access_token: accessToken,
+      openid: openId
+    };
+    var url = 'https://api.weixin.qq.com';
+
+    nock(url)
+      .post('/sns/auth')
+      .query(params)
+      .reply(200, {
+        errcode: 1
+      });
+    nodeWeixinOauth.validate(openId, accessToken, function (error) {
+      assert.equal(true, !error);
+      done();
+    });
+  });
+
+  it('should fail to validate a token', function (done) {
+    var accessToken = 'aa';
+    var openId = 'ssoos';
+    var nock = require('nock');
+
+    var params = {
+      access_token: accessToken,
+      openid: openId
+    };
+    var url = 'https://api.weixin.qq.com';
+
+    nock(url)
+      .post('/sns/auth')
+      .query(params)
+      .reply(200, {
+        errcode: 0
+      });
+    nodeWeixinOauth.validate(openId, accessToken, function (error) {
+      assert.equal(true, error);
+      done();
+    });
+  });
+
+  it('should be able to handler success', function (done) {
+    var code = 'aaa';
+    var nock = require('nock');
+    var params = {
+      appid: app.id,
+      secret: app.secret,
+      grant_type: 'authorization_code',
+      code: code,
+      access_token: app.token
+    };
+    var url = 'https://api.weixin.qq.com';
+    var reply = {
+      openid: 'sofdso',
+      access_token: 'sossoso',
+      refresh_token: 'refresh_token'
+    };
+
+    nock(url)
+      .post('/sns/oauth2/access_token')
+      .query(params)
+      .reply(200, reply);
+    nodeWeixinOauth.success(app, code, function (error, json) {
+      assert.equal(true, !error);
+      assert.equal(true, json.openid === reply.openid);
+      assert.equal(true, json.access_token === reply.access_token);
+      assert.equal(true, json.refresh_token === reply.refresh_token);
+      done();
+    });
+  });
+
+  it('should fail to handler success', function (done) {
+    var code = 'aaa';
+    var nock = require('nock');
+    var params = {
+      appid: app.id,
+      secret: app.secret,
+      grant_type: 'authorization_code',
+      code: code,
+      access_token: app.token
+    };
+    var url = 'https://api.weixin.qq.com';
+    var reply = {
+      openid: 'sofdso',
+      access_token: 'sossoso',
+      refresh_token: 'refresh_token'
+    };
+
+    nock(url)
+      .post('/sns/oauth2/access_token')
+      .query(params)
+      .reply(500, reply);
+    nodeWeixinOauth.success(app, code, function (error) {
+      assert.equal(true, error);
+      done();
+    });
+  });
+
+  it('should fail to handler success', function (done) {
+    var code = 'aaa';
+    var nock = require('nock');
+    var params = {
+      appid: app.id,
+      secret: app.secret,
+      grant_type: 'authorization_code',
+      code: code,
+      access_token: app.token
+    };
+    var url = 'https://api.weixin.qq.com';
+    var reply = {
+      access_token: 'sossoso',
+      refresh_token: 'refresh_token'
+    };
+
+    nock(url)
+      .post('/sns/oauth2/access_token')
+      .query(params)
+      .reply(200, reply);
+    nodeWeixinOauth.success(app, code, function (error) {
+      assert.equal(true, error);
       done();
     });
   });

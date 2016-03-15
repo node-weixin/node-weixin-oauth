@@ -1,7 +1,7 @@
 {
-  "name": "node-weixin-auth",
-  "version": "0.4.0",
-  "description": "auth module for weixin",
+  "name": "node-weixin-oauth",
+  "version": "0.0.0",
+  "description": "",
   "homepage": "",
   "author": {
     "name": "calidion",
@@ -16,9 +16,7 @@
     ""
   ],
   "devDependencies": {
-    "body-parser": "^1.15.0",
     "eslint-config-xo-space": "^0.7.0",
-    "express": "^4.13.4",
     "gulp": "^3.9.0",
     "gulp-coveralls": "^0.1.0",
     "gulp-eslint": "^1.0.0",
@@ -27,9 +25,8 @@
     "gulp-mocha": "^2.0.0",
     "gulp-nsp": "^2.1.0",
     "gulp-plumber": "^1.0.0",
-    "node-weixin-events": "0.0.3",
-    "node-weixin-settings": "^0.1.0",
-    "supertest": "^1.2.0"
+    "nock": "^7.2.2",
+    "node-weixin-config": "^0.2.0"
   },
   "eslintConfig": {
     "extends": "xo-space",
@@ -37,15 +34,14 @@
       "mocha": true
     }
   },
-  "repository": "node-weixin/node-weixin-auth",
+  "repository": "node-weixin/node-weixin-oauth",
   "scripts": {
     "prepublish": "gulp prepublish",
     "test": "gulp"
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "node-form-validator": "^0.4.0",
     "node-weixin-request": "^0.4.0",
-    "node-weixin-util": "^0.3.0"
+    "node-weixin-util": "^0.3.1"
   }
 }
