@@ -141,7 +141,7 @@ nwo.refresh(appId, refreshToken, function(error, body) {
 6、检验token有效性(可选)
 
 ```js
-nwo.validate(openid, refreshToken, function(error, body) {
+nwo.validate(openid, accessToken, function(error, body) {
 });
 ```
 
